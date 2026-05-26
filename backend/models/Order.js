@@ -62,6 +62,13 @@ const OrderSchema = new mongoose.Schema(
     deliveredAt: {
       type: Date,
     },
+    promocode: {
+      type: String,
+    },
+    discountAmount: {
+      type: Number,
+      default: 0.00,
+    },
   },
   { timestamps: true }
 );

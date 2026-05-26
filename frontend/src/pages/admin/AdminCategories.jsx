@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, LayoutDashboard, DollarSign, Plus, Edit2, Trash2, X, Upload, Loader2, FolderOpen } from 'lucide-react';
+import { ShoppingBag, LayoutDashboard, DollarSign, Plus, Edit2, Trash2, X, Upload, Loader2, FolderOpen, Tag } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../context/AuthContext';
 
@@ -284,6 +284,10 @@ const AdminCategories = () => {
           <Link to="/admin/orders" className="admin-menu-item">
             <DollarSign size={16} />
             <span>Manage Orders</span>
+          </Link>
+          <Link to="/admin/promocodes" className="admin-menu-item">
+            <Tag size={16} />
+            <span>Manage Promocodes</span>
           </Link>
         </nav>
 

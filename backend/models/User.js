@@ -48,6 +48,14 @@ const UserSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    pendingTopupSessionId: {
+      type: String,
+      default: '',
+    },
+    pendingTopupAmount: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );

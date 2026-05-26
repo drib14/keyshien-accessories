@@ -2,9 +2,16 @@ import axios from 'axios';
 import Order from '../models/Order.js';
 import User from '../models/User.js';
 
-// Base64 encode the Paymongo Secret Key (which was supplied under PAYMONGO_PUBLIC_KEY as it starts with sk_)
+// Base64 encode the Paymongo Secret Key (robustly detecting the key starting with sk_ in case they are swapped in .env)
 const getPaymongoAuthHeader = () => {
-  const secretKey = process.env.PAYMONGO_PUBLIC_KEY;
+  let secretKey = process.env.PAYMONGO_SECRET_KEY || '';
+  
+  if (process.env.PAYMONGO_SECRET_KEY && process.env.PAYMONGO_SECRET_KEY.startsWith('sk_')) {
+    secretKey = process.env.PAYMONGO_SECRET_KEY;
+  } else if (process.env.PAYMONGO_PUBLIC_KEY && process.env.PAYMONGO_PUBLIC_KEY.startsWith('sk_')) {
+    secretKey = process.env.PAYMONGO_PUBLIC_KEY;
+  }
+  
   return 'Basic ' + Buffer.from(`${secretKey}:`).toString('base64');
 };
 
@@ -93,8 +100,17 @@ export const verifyCheckoutSession = async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
 
+    // Fallback if sessionId is Stripe-like placeholder or empty
+    const activeSessionId = (sessionId && sessionId !== '{CHECKOUT_SESSION_ID}')
+      ? sessionId
+      : order.paymentResult?.paymongoCheckoutId;
+
+    if (!activeSessionId) {
+      return res.status(400).json({ message: 'Checkout session ID not found for this order' });
+    }
+
     const response = await axios.get(
-      `https://api.paymongo.com/v1/checkout_sessions/${sessionId}`,
+      `https://api.paymongo.com/v1/checkout_sessions/${activeSessionId}`,
       {
         headers: {
           accept: 'application/json',
@@ -114,7 +130,7 @@ export const verifyCheckoutSession = async (req, res) => {
       order.paymentResult = {
         id: session.attributes.payment_intent.id,
         status: 'paid',
-        paymongoCheckoutId: sessionId,
+        paymongoCheckoutId: activeSessionId,
       };
       await order.save();
 
@@ -192,6 +208,12 @@ export const createWalletTopupSession = async (req, res) => {
     );
 
     const session = response.data.data;
+    
+    // Save pending top-up session details on user for verification fallback
+    user.pendingTopupSessionId = session.id;
+    user.pendingTopupAmount = Number(amount);
+    await user.save();
+
     res.json({ checkoutUrl: session.attributes.checkout_url });
   } catch (error) {
     console.error('Paymongo Top-up Error:', error.response?.data || error.message);
@@ -211,8 +233,21 @@ export const verifyWalletTopupSession = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
 
+    // Fallback if sessionId is Stripe-like placeholder or empty
+    const activeSessionId = (sessionId && sessionId !== '{CHECKOUT_SESSION_ID}')
+      ? sessionId
+      : user.pendingTopupSessionId;
+
+    const activeAmount = (amount && Number(amount) > 0)
+      ? Number(amount)
+      : user.pendingTopupAmount;
+
+    if (!activeSessionId) {
+      return res.status(400).json({ message: 'No pending top-up session found to verify' });
+    }
+
     const response = await axios.get(
-      `https://api.paymongo.com/v1/checkout_sessions/${sessionId}`,
+      `https://api.paymongo.com/v1/checkout_sessions/${activeSessionId}`,
       {
         headers: {
           accept: 'application/json',
@@ -225,12 +260,16 @@ export const verifyWalletTopupSession = async (req, res) => {
     const paymentStatus = session.attributes.payment_intent?.attributes?.status;
 
     if (paymentStatus === 'succeeded') {
-      const topupAmount = Number(amount);
+      const topupAmount = Number(activeAmount);
       
-      // Prevent double crediting using a simple check in a production app,
-      // but for standard sandbox verification crediting dynamically is perfect and extremely fast.
-      user.walletBalance += topupAmount;
-      await user.save();
+      // Prevent double crediting using pendingTopupSessionId checks
+      if (user.pendingTopupSessionId === activeSessionId) {
+        user.walletBalance += topupAmount;
+        // Clear pending top-up session details upon successful crediting
+        user.pendingTopupSessionId = '';
+        user.pendingTopupAmount = 0;
+        await user.save();
+      }
 
       res.json({
         message: 'Top-up successful! Your wallet balance has been credited.',

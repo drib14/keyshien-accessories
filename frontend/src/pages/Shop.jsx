@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Search, SlidersHorizontal, Loader2 } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
-import { API_URL } from '../context/AuthContext';
+import { useAuth, API_URL } from '../context/AuthContext';
 
 const Shop = () => {
   const queryParams = new URLSearchParams(useLocation().search);
@@ -16,6 +16,10 @@ const Shop = () => {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [sort, setSort] = useState('newest');
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
 
   // Load dynamic categories
   useEffect(() => {
@@ -66,6 +70,16 @@ const Shop = () => {
     const newCat = queryParams.get('category');
     if (newCat) setCategory(newCat);
   }, [useLocation().search]);
+
+  // Reset page index on filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [keyword, category, minPrice, maxPrice, sort]);
+
+  // Pagination slicing calculations
+  const totalPages = Math.ceil(products.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedProducts = products.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <div className="shop-page-container">
@@ -196,6 +210,42 @@ const Shop = () => {
           border-radius: var(--radius-md);
           border: 1px solid var(--border-glass);
         }
+        .pagination-wrapper {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          margin-top: 40px;
+        }
+        .pagination-btn {
+          padding: 8px 14px;
+          border-radius: var(--radius-sm);
+          border: 1px solid var(--border-glass);
+          background: var(--bg-glass);
+          color: var(--color-dark);
+          font-family: var(--font-headers);
+          font-weight: 700;
+          font-size: 13px;
+          transition: all 0.2s;
+          cursor: pointer;
+          outline: none;
+        }
+        .pagination-btn:hover:not(:disabled) {
+          border-color: var(--color-primary);
+          background: var(--color-secondary);
+          color: var(--color-accent);
+          transform: translateY(-1px);
+        }
+        .pagination-btn.active {
+          background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+          color: #ffffff;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          box-shadow: var(--shadow-sm);
+        }
+        .pagination-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
         @media (max-width: 992px) {
           .shop-layout {
             flex-direction: column;
@@ -228,7 +278,7 @@ const Shop = () => {
 
       <div className="page-header" style={{ padding: '40px 0 10px 0' }}>
         <h1 className="page-title">Explore Collection</h1>
-        <p className="page-subtitle">Find your perfect accessory statement</p>
+        <p className="page-subtitle">Find your perfect handmade craft statement</p>
       </div>
 
       <div className="shop-layout">
@@ -250,7 +300,7 @@ const Shop = () => {
                 className={`category-filter-item ${category === cat ? 'active' : ''}`}
                 onClick={() => setCategory(cat)}
               >
-                {cat === 'All' ? 'All Accessories' : cat}
+                {cat === 'All' ? 'All Crafts' : cat}
               </li>
             ))}
           </ul>
@@ -300,7 +350,7 @@ const Shop = () => {
               </span>
               <input
                 type="text"
-                placeholder="Search accessories by name..."
+                placeholder="Search crafts by name..."
                 className="shop-search-input"
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
@@ -322,12 +372,12 @@ const Shop = () => {
           {loading ? (
             <div style={{ textAlign: 'center', padding: '80px 0' }}>
               <Loader2 size={40} className="spinning-icon" style={{ margin: 'auto', color: 'var(--color-primary)', marginBottom: '16px' }} />
-              <span style={{ color: 'var(--color-muted)', fontWeight: 600 }}>Filtering cute accessories...</span>
+              <span style={{ color: 'var(--color-muted)', fontWeight: 600 }}>Filtering cute crafts...</span>
             </div>
           ) : products.length === 0 ? (
             <div className="no-results-panel">
               <h3 style={{ fontFamily: 'var(--font-headers)', color: 'var(--color-dark)', marginBottom: '10px' }}>
-                No Accessories Found
+                No Crafts Found
               </h3>
               <p style={{ color: 'var(--color-muted)', fontSize: '14px', marginBottom: '20px' }}>
                 We couldn't find any products matching your active filters. Try resetting the criteria.
@@ -345,10 +395,41 @@ const Shop = () => {
               </button>
             </div>
           ) : (
-            <div className="product-grid">
-              {products.map((product) => (
-                <ProductCard key={product._id} product={product} />
-              ))}
+            <div>
+              <div className="product-grid">
+                {paginatedProducts.map((product) => (
+                  <ProductCard key={product._id} product={product} />
+                ))}
+              </div>
+
+              {/* Dynamic Rose-Gold Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="pagination-wrapper">
+                  <button 
+                    className="pagination-btn"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Prev
+                  </button>
+                  {[...Array(totalPages)].map((_, index) => (
+                    <button
+                      key={index}
+                      className={`pagination-btn ${currentPage === index + 1 ? 'active' : ''}`}
+                      onClick={() => setCurrentPage(index + 1)}
+                    >
+                      {index + 1}
+                    </button>
+                  ))}
+                  <button 
+                    className="pagination-btn"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </main>

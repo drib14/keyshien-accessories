@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, LayoutDashboard, DollarSign, Plus, Edit2, Trash2, X, Upload, Loader2, FolderOpen } from 'lucide-react';
+import { ShoppingBag, LayoutDashboard, DollarSign, Plus, Edit2, Trash2, X, Upload, Loader2, FolderOpen, Tag } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../context/AuthContext';
 
@@ -345,6 +345,10 @@ const AdminProducts = () => {
             <DollarSign size={16} />
             <span>Manage Orders</span>
           </Link>
+          <Link to="/admin/promocodes" className="admin-menu-item">
+            <Tag size={16} />
+            <span>Manage Promocodes</span>
+          </Link>
         </nav>
 
         {/* Main Grid */}
@@ -461,21 +465,14 @@ const AdminProducts = () => {
 
               <div className="form-group">
                 <label className="form-label">Category</label>
-                <select
+                <input
+                  type="text"
                   className="form-control"
+                  placeholder="e.g. Rings, Necklaces, Custom Crafts"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  style={{ cursor: 'pointer' }}
                   required
-                >
-                  {dbCategories.length === 0 ? (
-                    <option value="">No categories defined</option>
-                  ) : (
-                    dbCategories.map((cat) => (
-                      <option key={cat._id} value={cat.name}>{cat.name}</option>
-                    ))
-                  )}
-                </select>
+                />
               </div>
 
               <div style={{ display: 'flex', gap: '16px' }}>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ShoppingBag, LayoutDashboard, DollarSign, X, Eye, Truck, Loader2 } from 'lucide-react';
+import { ShoppingBag, LayoutDashboard, DollarSign, X, Eye, Truck, Loader2, FolderOpen, Tag } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../context/AuthContext';
 
@@ -169,9 +169,17 @@ const AdminOrders = () => {
             <ShoppingBag size={16} />
             <span>Manage Products</span>
           </Link>
+          <Link to="/admin/categories" className="admin-menu-item">
+            <FolderOpen size={16} />
+            <span>Manage Categories</span>
+          </Link>
           <Link to="/admin/orders" className="admin-menu-item active">
             <DollarSign size={16} />
             <span>Manage Orders</span>
+          </Link>
+          <Link to="/admin/promocodes" className="admin-menu-item">
+            <Tag size={16} />
+            <span>Manage Promocodes</span>
           </Link>
         </nav>
 

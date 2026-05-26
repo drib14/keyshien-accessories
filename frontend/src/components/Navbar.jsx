@@ -222,13 +222,24 @@ const Navbar = () => {
       </Link>
 
       <ul className="navbar-links">
-        <li><Link to="/" className="nav-link">Home</Link></li>
-        <li><Link to="/shop" className="nav-link">Shop</Link></li>
-        <li><Link to="/orders" className="nav-link">My Orders</Link></li>
+        {user && user.role === 'admin' ? (
+          <>
+            <li><Link to="/admin/dashboard" className="nav-link">Dashboard</Link></li>
+            <li><Link to="/admin/products" className="nav-link">Products</Link></li>
+            <li><Link to="/admin/categories" className="nav-link">Categories</Link></li>
+            <li><Link to="/admin/orders" className="nav-link">Orders</Link></li>
+          </>
+        ) : (
+          <>
+            <li><Link to="/" className="nav-link">Home</Link></li>
+            <li><Link to="/shop" className="nav-link">Shop</Link></li>
+            {user && <li><Link to="/orders" className="nav-link">My Orders</Link></li>}
+          </>
+        )}
       </ul>
 
       <div className="navbar-actions">
-        {user && (
+        {user && user.role !== 'admin' && (
           <Link to="/wallet" className="nav-wallet-pill" title="My Wallet Balance">
             <Wallet size={14} />
             <span>₱{Number(user.walletBalance || 0).toFixed(2)}</span>
@@ -269,10 +280,12 @@ const Navbar = () => {
                 <User size={14} />
                 <span>My Profile</span>
               </Link>
-              <Link to="/wallet" className="dropdown-menu-item" onClick={() => setDropdownOpen(false)}>
-                <Wallet size={14} />
-                <span>My Wallet</span>
-              </Link>
+              {user.role !== 'admin' && (
+                <Link to="/wallet" className="dropdown-menu-item" onClick={() => setDropdownOpen(false)}>
+                  <Wallet size={14} />
+                  <span>My Wallet</span>
+                </Link>
+              )}
               <Link to="/shop" className="dropdown-menu-item" onClick={() => setDropdownOpen(false)}>
                 <Store size={14} />
                 <span>Browse Store</span>

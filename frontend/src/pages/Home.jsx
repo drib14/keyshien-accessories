@@ -7,14 +7,16 @@ import { API_URL } from '../context/AuthContext';
 const Home = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [heroImage, setHeroImage] = useState('https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600&q=80');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
-        const [productsRes, categoriesRes] = await Promise.all([
+        const [productsRes, categoriesRes, settingsRes] = await Promise.all([
           fetch(`${API_URL}/products?sort=newest`),
-          fetch(`${API_URL}/categories`)
+          fetch(`${API_URL}/categories`),
+          fetch(`${API_URL}/settings/hero_image`)
         ]);
 
         if (productsRes.ok) {
@@ -25,6 +27,13 @@ const Home = () => {
         if (categoriesRes.ok) {
           const categoriesData = await categoriesRes.json();
           setCategories(categoriesData);
+        }
+
+        if (settingsRes.ok) {
+          const settingsData = await settingsRes.json();
+          if (settingsData && settingsData.value) {
+            setHeroImage(settingsData.value);
+          }
         }
       } catch (error) {
         console.error('Failed to fetch home data:', error);
@@ -247,20 +256,20 @@ const Home = () => {
         <div className="hero-content">
           <div className="hero-tag">
             <Sparkles size={12} />
-            <span>Premium Handcrafted Jewels</span>
+            <span>Premium Handcrafted Crafts</span>
           </div>
           <h1 className="hero-title">
-            Charming Accessories for Your <span>Everyday Sparkle</span>
+            Dreamy Accessories & <span>Cute Handmade Crafts</span>
           </h1>
           <p className="hero-desc">
-            Discover a curated collection of dreamy rose-gold necklaces, aesthetic earrings, and cute hand-designed accessories designed to make you feel beautiful every single day.
+            Discover a curated collection of dreamy crocheted items, aesthetic charms, and cute hand-designed accessories crafted with absolute love and precision.
           </p>
           <div className="hero-buttons">
             <Link to="/shop" className="btn btn-primary">
-              Browse Collection <ArrowRight size={16} />
+              Explore Store <ArrowRight size={16} />
             </Link>
-            <Link to="/shop?category=Necklaces" className="btn btn-secondary">
-              View Necklaces
+            <Link to="/shop" className="btn btn-secondary">
+              View Catalog
             </Link>
           </div>
         </div>
@@ -268,14 +277,14 @@ const Home = () => {
         <div className="hero-image-panel">
           <div className="hero-img-backdrop"></div>
           <img
-            src="https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600&q=80"
-            alt="Accessories"
+            src={heroImage}
+            alt="Handmade Crafts"
             className="hero-img-main"
           />
           <div className="hero-floating-card glass-panel">
             <div style={{ background: 'var(--color-primary)', width: 10, height: 10, borderRadius: '50%' }}></div>
             <div style={{ fontFamily: 'var(--font-headers)', fontSize: 12, fontWeight: 700 }}>
-              💖 20% Off Storewide
+              💖 Crafted With Love
             </div>
           </div>
         </div>

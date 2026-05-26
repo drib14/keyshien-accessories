@@ -1,6 +1,7 @@
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import User from '../models/User.js';
+import Promocode from '../models/Promocode.js';
 
 // @desc    Create new order & decrement stock
 // @route   POST /api/orders
@@ -12,6 +13,8 @@ export const addOrderItems = async (req, res) => {
     coordinates,
     paymentMethod,
     totalPrice,
+    promocode,
+    discountAmount,
   } = req.body;
 
   try {
@@ -76,6 +79,8 @@ export const addOrderItems = async (req, res) => {
       coordinates,
       paymentMethod,
       totalPrice,
+      promocode,
+      discountAmount: discountAmount || 0,
       isPaid,
       paidAt,
       fulfillmentStatus,
@@ -83,6 +88,19 @@ export const addOrderItems = async (req, res) => {
     });
 
     const createdOrder = await order.save();
+
+    // Increment promocode usage count if a promo code was applied
+    if (promocode) {
+      try {
+        await Promocode.findOneAndUpdate(
+          { code: promocode.toUpperCase() },
+          { $inc: { usageCount: 1 } }
+        );
+      } catch (err) {
+        console.error('Failed to increment promocode usage count:', err);
+      }
+    }
+
     res.status(201).json(createdOrder);
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutDashboard, ShoppingBag, Users, DollarSign, ArrowRight, Loader2, ArrowUpRight, FolderOpen } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Users, DollarSign, ArrowRight, Loader2, ArrowUpRight, FolderOpen, Upload, Tag } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../context/AuthContext';
 
@@ -10,12 +10,19 @@ const AdminDashboard = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Settings States
+  const [heroImage, setHeroImage] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [settingsSuccess, setSettingsSuccess] = useState('');
+  const [settingsError, setSettingsError] = useState('');
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [ordersRes, productsRes] = await Promise.all([
+        const [ordersRes, productsRes, settingRes] = await Promise.all([
           fetch(`${API_URL}/orders`, { headers: { Authorization: `Bearer ${token}` } }),
           fetch(`${API_URL}/products`),
+          fetch(`${API_URL}/settings/hero_image`),
         ]);
 
         if (ordersRes.ok && productsRes.ok) {
@@ -23,6 +30,13 @@ const AdminDashboard = () => {
           const productsData = await productsRes.json();
           setOrders(ordersData);
           setProducts(productsData);
+        }
+
+        if (settingRes.ok) {
+          const settingData = await settingRes.json();
+          if (settingData && settingData.value) {
+            setHeroImage(settingData.value);
+          }
         }
       } catch (err) {
         console.error('Failed to load dashboard data:', err);
@@ -40,7 +54,6 @@ const AdminDashboard = () => {
   const activeStockCount = products.reduce((acc, p) => acc + p.stock, 0);
 
   // Custom visual SVG chart data (e.g. Sales over time)
-  // Let's generate a lovely glowing SVG spline curve chart based on order totals!
   const getSalesSplinePoints = () => {
     if (orders.length === 0) return '0,100 300,100';
     // Group last 6 orders
@@ -54,6 +67,59 @@ const AdminDashboard = () => {
         return `${x},${y}`;
       })
       .join(' ');
+  };
+
+  const handleHeroImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    setSettingsSuccess('');
+    setSettingsError('');
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      // 1. Upload to Cloudinary
+      const uploadRes = await fetch(`${API_URL}/upload/single`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const uploadData = await uploadRes.json();
+
+      if (!uploadRes.ok || !uploadData.url) {
+        throw new Error(uploadData.message || 'Image upload failed.');
+      }
+
+      // 2. Save settings to DB
+      const settingsRes = await fetch(`${API_URL}/settings/hero_image`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ value: uploadData.url }),
+      });
+
+      const settingsData = await settingsRes.json();
+
+      if (settingsRes.ok) {
+        setHeroImage(uploadData.url);
+        setSettingsSuccess('Homepage Crafts hero banner image updated successfully! 💖');
+      } else {
+        throw new Error(settingsData.message || 'Failed to save settings.');
+      }
+    } catch (err) {
+      console.error(err);
+      setSettingsError(err.message || 'Failed to update hero crafts banner image.');
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -120,7 +186,7 @@ const AdminDashboard = () => {
         .analytics-layout {
           display: flex;
           gap: 30px;
-          margin-bottom: 40px;
+          margin-bottom: 20px;
         }
         .chart-box {
           width: 50%;
@@ -185,6 +251,10 @@ const AdminDashboard = () => {
           <Link to="/admin/orders" className="admin-menu-item">
             <DollarSign size={16} />
             <span>Manage Orders</span>
+          </Link>
+          <Link to="/admin/promocodes" className="admin-menu-item">
+            <Tag size={16} />
+            <span>Manage Promocodes</span>
           </Link>
         </nav>
 
@@ -303,6 +373,69 @@ const AdminDashboard = () => {
                       ))}
                     </div>
                   )}
+                </div>
+              </div>
+
+              {/* Dynamic Crafts Hero Banner Settings */}
+              <div className="glass-panel" style={{ padding: '30px', marginTop: '20px' }}>
+                <h3 style={{ fontFamily: 'var(--font-headers)', fontSize: '16px', color: 'var(--color-dark)', marginBottom: '10px' }}>
+                  Dynamic Homepage Craft Banner
+                </h3>
+                <p style={{ fontSize: '13px', color: 'var(--color-muted)', marginBottom: '20px', lineHeight: 1.5 }}>
+                  Manage the main hero banner graphic displayed on the storefront home screen. Upload a high-resolution portrait or landscape image of your handmade crafts.
+                </p>
+
+                {settingsSuccess && (
+                  <div style={{ color: 'var(--color-success)', background: 'rgba(76,175,80,0.05)', border: '1px solid rgba(76,175,80,0.15)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', fontSize: '13px', fontWeight: 600, marginBottom: '20px' }}>
+                    {settingsSuccess}
+                  </div>
+                )}
+                {settingsError && (
+                  <div style={{ color: 'var(--color-danger)', background: 'rgba(244,67,54,0.05)', border: '1px solid rgba(244,67,54,0.15)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', fontSize: '13px', fontWeight: 600, marginBottom: '20px' }}>
+                    {settingsError}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '30px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  {heroImage ? (
+                    <img 
+                      src={heroImage} 
+                      alt="Hero preview" 
+                      style={{ width: '220px', height: '140px', borderRadius: 'var(--radius-md)', objectFit: 'cover', border: '2px solid var(--border-glass)', boxShadow: 'var(--shadow-sm)' }} 
+                    />
+                  ) : (
+                    <div style={{ width: '220px', height: '140px', borderRadius: 'var(--radius-md)', background: 'var(--bg-primary)', border: '2px dashed var(--border-glass)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-muted)', fontSize: '12px' }}>
+                      No hero image set
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => document.getElementById('admin-hero-file').click()}
+                      disabled={uploading}
+                      style={{ display: 'flex', gap: '8px', padding: '10px 20px', fontSize: '13px', fontWeight: 700 }}
+                    >
+                      {uploading ? (
+                        <>
+                          <Loader2 size={14} className="spinning-icon" /> Uploading to Cloudinary...
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={14} /> Upload Banner Craft Photo
+                        </>
+                      )}
+                    </button>
+                    <input 
+                      type="file" 
+                      id="admin-hero-file" 
+                      style={{ display: 'none' }} 
+                      onChange={handleHeroImageUpload} 
+                      disabled={uploading} 
+                    />
+                    <span style={{ fontSize: '11px', color: 'var(--color-muted)' }}>JPEG or PNG files under 5MB</span>
+                  </div>
                 </div>
               </div>
             </div>

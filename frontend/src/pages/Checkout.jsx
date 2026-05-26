@@ -19,9 +19,80 @@ const Checkout = () => {
   const [orderLoading, setOrderLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Promo Code States
+  const [promoCode, setPromoCode] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState(null);
+  const [promoError, setPromoError] = useState('');
+  const [promoSuccess, setPromoSuccess] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
+
   const subtotal = getCartSubtotal();
   const shipping = subtotal > 1500 ? 0 : 80;
-  const total = subtotal + shipping;
+
+  // Calculate discount dynamically based on applied promo code
+  let discount = 0;
+  if (appliedPromo) {
+    if (appliedPromo.discountType === 'percentage') {
+      discount = subtotal * (appliedPromo.discountValue / 100);
+    } else {
+      discount = appliedPromo.discountValue;
+    }
+    if (discount > subtotal) {
+      discount = subtotal;
+    }
+  }
+
+  const total = Math.max(0, subtotal + shipping - discount);
+
+  const handleApplyPromo = async (e) => {
+    if (e) e.preventDefault();
+    if (!promoCode.trim()) return;
+
+    setPromoLoading(true);
+    setPromoError('');
+    setPromoSuccess('');
+
+    try {
+      const response = await fetch(`${API_URL}/promocodes/validate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          code: promoCode.trim().toUpperCase(),
+          subtotal,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setAppliedPromo({
+          code: data.code,
+          discountType: data.discountType,
+          discountValue: data.discountValue,
+          discountAmount: data.discountAmount,
+        });
+        setPromoSuccess(`Promo code applied: ₱${data.discountAmount.toFixed(2)} off!`);
+      } else {
+        setAppliedPromo(null);
+        setPromoError(data.message || 'Failed to validate promo code.');
+      }
+    } catch (err) {
+      console.error(err);
+      setPromoError('Failed to connect to promo verification server.');
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setPromoCode('');
+    setPromoSuccess('');
+    setPromoError('');
+  };
 
   const handleLocationSelected = (locationData) => {
     setAddress(locationData.address || '');
@@ -83,6 +154,8 @@ const Checkout = () => {
           coordinates,
           paymentMethod: paymentGateway === 'wallet' ? 'Wallet' : 'Paymongo (' + paymentGateway.toUpperCase() + ')',
           totalPrice: total,
+          promocode: appliedPromo ? appliedPromo.code : undefined,
+          discountAmount: appliedPromo ? discount : 0,
         }),
       });
 
@@ -405,10 +478,62 @@ const Checkout = () => {
 
             <hr style={{ border: '0', borderTop: '1px solid #ffccd5', margin: '15px 0' }} />
 
+            <div className="promo-code-box" style={{ marginBottom: '15px' }}>
+              {appliedPromo ? (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(76, 175, 80, 0.05)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(76, 175, 80, 0.2)' }}>
+                  <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--color-success)' }}>{appliedPromo.code} Applied</span>
+                    <span style={{ fontSize: '11px', color: 'var(--color-muted)' }}>
+                      {appliedPromo.discountType === 'percentage' ? `${appliedPromo.discountValue}% Off` : `₱${appliedPromo.discountValue.toFixed(2)} Off`}
+                    </span>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={handleRemovePromo} 
+                    style={{ background: 'none', border: 'none', color: 'var(--color-danger)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Promo Code (e.g. SUMMER20)"
+                      value={promoCode}
+                      onChange={(e) => setPromoCode(e.target.value)}
+                      style={{ textTransform: 'uppercase', padding: '8px 12px', fontSize: '13px', margin: '0' }}
+                    />
+                    <button 
+                      type="button"
+                      disabled={promoLoading || !promoCode}
+                      onClick={handleApplyPromo}
+                      className="btn btn-secondary"
+                      style={{ padding: '8px 16px', fontSize: '13px', flexShrink: 0 }}
+                    >
+                      {promoLoading ? <Loader2 size={13} className="spinning-icon" /> : 'Apply'}
+                    </button>
+                  </div>
+                  {promoError && <span style={{ color: 'var(--color-danger)', fontSize: '11px', fontWeight: 600, display: 'block', marginTop: '6px' }}>{promoError}</span>}
+                  {promoSuccess && <span style={{ color: 'var(--color-success)', fontSize: '11px', fontWeight: 600, display: 'block', marginTop: '6px' }}>{promoSuccess}</span>}
+                </div>
+              )}
+            </div>
+
+            <hr style={{ border: '0', borderTop: '1px solid #ffccd5', margin: '15px 0' }} />
+
             <div className="summary-row" style={{ fontSize: '13px', marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
               <span>Subtotal</span>
               <span style={{ fontWeight: 600, color: 'var(--color-dark)' }}>₱{subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
             </div>
+            {discount > 0 && (
+              <div className="summary-row" style={{ fontSize: '13px', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', color: 'var(--color-success)', fontWeight: 600 }}>
+                <span>Discount</span>
+                <span>-₱{discount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              </div>
+            )}
             <div className="summary-row" style={{ fontSize: '13px', marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
               <span>Shipping Fee</span>
               <span style={{ fontWeight: 600, color: 'var(--color-dark)' }}>{shipping === 0 ? 'FREE' : `₱${shipping.toFixed(2)}`}</span>

@@ -34,6 +34,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminCategories from './pages/admin/AdminCategories';
 import AdminOrders from './pages/admin/AdminOrders';
+import AdminPromocodes from './pages/admin/AdminPromocodes';
 
 // Route Guards
 const ProtectedRoute = ({ children }) => {
@@ -48,6 +49,15 @@ const AdminRoute = ({ children }) => {
   if (loading) return null;
   if (!user || user.role !== 'admin') return <Navigate to="/" replace />;
   return children;
+};
+
+const HomeRoute = () => {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (user && user.role === 'admin') {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+  return <Home />;
 };
 
 const AppContent = () => {
@@ -65,7 +75,7 @@ const AppContent = () => {
       <main className="main-content">
         <Routes>
           {/* Public Storefront Routes */}
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<HomeRoute />} />
           <Route path="/shop" element={<Shop />} />
           <Route path="/products/:id" element={<ProductDetail />} />
           <Route path="/cart" element={<Cart />} />
@@ -89,6 +99,7 @@ const AppContent = () => {
           <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
           <Route path="/admin/categories" element={<AdminRoute><AdminCategories /></AdminRoute>} />
           <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
+          <Route path="/admin/promocodes" element={<AdminRoute><AdminPromocodes /></AdminRoute>} />
 
           {/* Fallback to Home */}
           <Route path="*" element={<Navigate to="/" replace />} />
