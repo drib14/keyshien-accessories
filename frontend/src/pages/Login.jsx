@@ -75,7 +75,7 @@ const Login = () => {
       <div className="login-layout glass-panel">
         <div className="login-header">
           <h2 className="login-logo">Welcome Back 💖</h2>
-          <p style={{ color: 'var(--color-muted)', fontSize: '14px' }}>Sign in to Keyshien Accessories store</p>
+          <p style={{ color: 'var(--color-muted)', fontSize: '14px' }}>Sign in to Keyshien's Accessories store</p>
         </div>
 
         {error && (

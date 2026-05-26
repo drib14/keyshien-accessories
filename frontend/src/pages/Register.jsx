@@ -10,7 +10,7 @@ const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  
+
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -67,7 +67,7 @@ const Register = () => {
           Verification Link Sent!
         </h2>
         <p style={{ color: 'var(--color-muted)', fontSize: '15px', lineHeight: '1.6', marginBottom: '24px' }}>
-          We have sent a premium verification email to <strong>{email}</strong>. Please check your inbox and click the verification link to activate your Keyshien Accessories account.
+          We have sent a premium verification email to <strong>{email}</strong>. Please check your inbox and click the verification link to activate your Keyshien's Accessories account.
         </p>
         <Link to="/login" className="btn btn-primary" style={{ display: 'inline-flex' }}>
           Go to Sign In
@@ -113,7 +113,7 @@ const Register = () => {
       <div className="register-layout glass-panel">
         <div className="register-header">
           <h2 className="register-logo">Create Account 💖</h2>
-          <p style={{ color: 'var(--color-muted)', fontSize: '14px' }}>Join Keyshien Accessories store today</p>
+          <p style={{ color: 'var(--color-muted)', fontSize: '14px' }}>Join Keyshien's Accessories store today</p>
         </div>
 
         {error && (

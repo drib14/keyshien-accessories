@@ -69,6 +69,20 @@ const OrderSchema = new mongoose.Schema(
       type: Number,
       default: 0.00,
     },
+    shippingMethod: {
+      type: String,
+      enum: ['Standard', 'Lalamove'],
+      default: 'Standard',
+    },
+    lalamoveQuotationId: {
+      type: String,
+    },
+    lalamoveDeliveryId: {
+      type: String,
+    },
+    lalamoveTrackingStatus: {
+      type: String,
+    },
   },
   { timestamps: true }
 );

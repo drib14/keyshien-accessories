@@ -218,7 +218,7 @@ const Navbar = () => {
 
       <Link to="/" className="navbar-logo-link">
         <img src="/logo.jpg" alt="Keyshien Logo" className="navbar-brand-logo" />
-        <span>Keyshien</span>
+        <span>Keyshien's Accessories</span>
       </Link>
 
       <ul className="navbar-links">
@@ -253,17 +253,17 @@ const Navbar = () => {
 
         {user ? (
           <div className="user-nav-dropdown" ref={dropdownRef}>
-            <button 
-              className="action-icon-btn" 
-              onClick={() => setDropdownOpen(!dropdownOpen)} 
+            <button
+              className="action-icon-btn"
+              onClick={() => setDropdownOpen(!dropdownOpen)}
               title="Account Menu"
               style={{ overflow: 'hidden' }}
             >
               {user.avatar ? (
-                <img 
-                  src={user.avatar} 
-                  alt="Avatar" 
-                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
+                <img
+                  src={user.avatar}
+                  alt="Avatar"
+                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
                 />
               ) : (
                 <div className="initials-avatar">{getInitials(user.name)}</div>
@@ -291,9 +291,9 @@ const Navbar = () => {
                 <span>Browse Store</span>
               </Link>
               <hr style={{ border: '0', borderTop: '1px solid #ffccd5', margin: '6px 0' }} />
-              <button 
-                onClick={handleLogout} 
-                className="dropdown-menu-item" 
+              <button
+                onClick={handleLogout}
+                className="dropdown-menu-item"
                 style={{ width: '100%', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer' }}
               >
                 <LogOut size={14} style={{ color: 'var(--color-danger)' }} />

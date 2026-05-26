@@ -14,7 +14,7 @@ const Checkout = () => {
   const [address, setAddress] = useState(shippingAddress.address || '');
   const [city, setCity] = useState(shippingAddress.city || '');
   const [postalCode, setPostalCode] = useState(shippingAddress.postalCode || '');
-  
+
   const [paymentGateway, setPaymentGateway] = useState('gcash'); // Default to GCash Paymongo
   const [orderLoading, setOrderLoading] = useState(false);
   const [error, setError] = useState('');
@@ -98,7 +98,7 @@ const Checkout = () => {
     setAddress(locationData.address || '');
     setCity(locationData.city || '');
     setPostalCode(locationData.postalCode || '');
-    
+
     // Save in context
     saveShippingAddress({
       address: locationData.address || '',
@@ -106,7 +106,7 @@ const Checkout = () => {
       postalCode: locationData.postalCode || '',
       country: 'Philippines'
     });
-    
+
     saveCoordinates({
       lat: locationData.lat,
       lng: locationData.lng
@@ -395,7 +395,7 @@ const Checkout = () => {
 
               <div className="payment-methods-grid">
                 {/* GCash */}
-                <div 
+                <div
                   className={`payment-method-card ${paymentGateway === 'gcash' ? 'active' : ''}`}
                   onClick={() => setPaymentGateway('gcash')}
                 >
@@ -404,7 +404,7 @@ const Checkout = () => {
                 </div>
 
                 {/* PayMaya */}
-                <div 
+                <div
                   className={`payment-method-card ${paymentGateway === 'paymaya' ? 'active' : ''}`}
                   onClick={() => setPaymentGateway('paymaya')}
                 >
@@ -413,7 +413,7 @@ const Checkout = () => {
                 </div>
 
                 {/* Card */}
-                <div 
+                <div
                   className={`payment-method-card ${paymentGateway === 'card' ? 'active' : ''}`}
                   onClick={() => setPaymentGateway('card')}
                 >
@@ -422,7 +422,7 @@ const Checkout = () => {
                 </div>
 
                 {/* GrabPay */}
-                <div 
+                <div
                   className={`payment-method-card ${paymentGateway === 'grab_pay' ? 'active' : ''}`}
                   onClick={() => setPaymentGateway('grab_pay')}
                 >
@@ -431,13 +431,13 @@ const Checkout = () => {
                 </div>
 
                 {/* Wallet Balance */}
-                <div 
+                <div
                   className={`payment-method-card ${paymentGateway === 'wallet' ? 'active' : ''}`}
                   onClick={() => setPaymentGateway('wallet')}
                   style={{ gridColumn: 'span 2' }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                    <span className="method-title">💖 Keyshien Wallet Balance</span>
+                    <span className="method-title">Keyshien Wallet Balance</span>
                     <strong style={{ color: 'var(--color-accent)' }}>
                       Available: ₱{Number(user?.walletBalance || 0).toFixed(2)}
                     </strong>
@@ -460,7 +460,7 @@ const Checkout = () => {
         <div className="checkout-summary-section">
           <div className="order-summary-box glass-panel">
             <h3 style={{ fontFamily: 'var(--font-headers)', fontSize: '18px', color: 'var(--color-dark)' }}>Order Basket</h3>
-            
+
             <div className="checkout-items-list">
               {cartItems.map((item) => (
                 <div key={item.product} className="checkout-item-row">
@@ -487,9 +487,9 @@ const Checkout = () => {
                       {appliedPromo.discountType === 'percentage' ? `${appliedPromo.discountValue}% Off` : `₱${appliedPromo.discountValue.toFixed(2)} Off`}
                     </span>
                   </div>
-                  <button 
+                  <button
                     type="button"
-                    onClick={handleRemovePromo} 
+                    onClick={handleRemovePromo}
                     style={{ background: 'none', border: 'none', color: 'var(--color-danger)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
                   >
                     Remove
@@ -506,7 +506,7 @@ const Checkout = () => {
                       onChange={(e) => setPromoCode(e.target.value)}
                       style={{ textTransform: 'uppercase', padding: '8px 12px', fontSize: '13px', margin: '0' }}
                     />
-                    <button 
+                    <button
                       type="button"
                       disabled={promoLoading || !promoCode}
                       onClick={handleApplyPromo}
