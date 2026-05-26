@@ -6,24 +6,33 @@ import { API_URL } from '../context/AuthContext';
 
 const Home = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchHomeData = async () => {
       try {
-        const response = await fetch(`${API_URL}/products?sort=newest`);
-        if (response.ok) {
-          const data = await response.json();
-          // Take first 4 for featured grid
-          setFeaturedProducts(data.slice(0, 4));
+        const [productsRes, categoriesRes] = await Promise.all([
+          fetch(`${API_URL}/products?sort=newest`),
+          fetch(`${API_URL}/categories`)
+        ]);
+
+        if (productsRes.ok) {
+          const productsData = await productsRes.json();
+          setFeaturedProducts(productsData.slice(0, 4));
+        }
+
+        if (categoriesRes.ok) {
+          const categoriesData = await categoriesRes.json();
+          setCategories(categoriesData);
         }
       } catch (error) {
-        console.error('Failed to fetch products for home:', error);
+        console.error('Failed to fetch home data:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchProducts();
+    fetchHomeData();
   }, []);
 
   return (
@@ -309,41 +318,27 @@ const Home = () => {
         <h2 className="page-title" style={{ fontSize: '32px' }}>Shop by Category</h2>
         <p className="page-subtitle">Handpicked accessories grouped by your style statement</p>
         
-        <div className="category-grid">
-          <Link to="/shop?category=Rings" className="category-card glass-panel">
-            <img
-              src="https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=500&q=80"
-              alt="Rings"
-              className="category-img"
-            />
-            <div className="category-overlay">
-              <h3 className="category-title">Elegant Rings</h3>
-              <span className="category-count">Explore Collection</span>
-            </div>
-          </Link>
-          <Link to="/shop?category=Necklaces" className="category-card glass-panel">
-            <img
-              src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=500&q=80"
-              alt="Necklaces"
-              className="category-img"
-            />
-            <div className="category-overlay">
-              <h3 className="category-title">Charming Necklaces</h3>
-              <span className="category-count">Explore Collection</span>
-            </div>
-          </Link>
-          <Link to="/shop?category=Earrings" className="category-card glass-panel">
-            <img
-              src="https://images.unsplash.com/photo-1635767798638-3e25273a8236?w=500&q=80"
-              alt="Earrings"
-              className="category-img"
-            />
-            <div className="category-overlay">
-              <h3 className="category-title">Pastel Earrings</h3>
-              <span className="category-count">Explore Collection</span>
-            </div>
-          </Link>
-        </div>
+        {categories.length === 0 ? (
+          <div className="glass-panel" style={{ padding: '30px', marginTop: '20px', color: 'var(--color-muted)', textAlign: 'center' }}>
+            <span>No categories defined yet. Log in as Admin to manage.</span>
+          </div>
+        ) : (
+          <div className="category-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
+            {categories.map((cat) => (
+              <Link key={cat._id} to={`/shop?category=${encodeURIComponent(cat.name)}`} className="category-card glass-panel">
+                <img
+                  src={cat.image || "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=500&q=80"}
+                  alt={cat.name}
+                  className="category-img"
+                />
+                <div className="category-overlay">
+                  <h3 className="category-title">{cat.name}</h3>
+                  <span className="category-count">Explore Collection</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Featured Products */}

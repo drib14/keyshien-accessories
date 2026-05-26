@@ -1,5 +1,6 @@
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
+import User from '../models/User.js';
 
 // @desc    Create new order & decrement stock
 // @route   POST /api/orders
@@ -31,6 +32,36 @@ export const addOrderItems = async (req, res) => {
       }
     }
 
+    // Handle Wallet payment verification
+    let isPaid = false;
+    let paidAt = null;
+    let fulfillmentStatus = 'Pending';
+    let paymentResult = {};
+
+    if (paymentMethod === 'Wallet') {
+      const user = await User.findById(req.user._id);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      if (user.walletBalance < totalPrice) {
+        return res.status(400).json({ message: 'Insufficient wallet balance' });
+      }
+
+      // Deduct balance and award reward points (1 point per 100 spent)
+      user.walletBalance -= totalPrice;
+      const pointsEarned = Math.floor(totalPrice / 100);
+      user.rewardPoints += pointsEarned;
+      await user.save();
+
+      isPaid = true;
+      paidAt = Date.now();
+      fulfillmentStatus = 'Processing'; // Start as processing since paid
+      paymentResult = {
+        id: 'wallet_debit_' + Date.now(),
+        status: 'paid',
+      };
+    }
+
     // Decrement stocks
     for (const item of orderItems) {
       await Product.findByIdAndUpdate(item.product, {
@@ -45,6 +76,10 @@ export const addOrderItems = async (req, res) => {
       coordinates,
       paymentMethod,
       totalPrice,
+      isPaid,
+      paidAt,
+      fulfillmentStatus,
+      paymentResult,
     });
 
     const createdOrder = await order.save();
@@ -114,6 +149,7 @@ export const updateOrderToPaid = async (req, res) => {
     const order = await Order.findById(req.params.id);
 
     if (order) {
+      const wasPaid = order.isPaid;
       order.isPaid = true;
       order.paidAt = Date.now();
       order.paymentResult = {
@@ -123,6 +159,19 @@ export const updateOrderToPaid = async (req, res) => {
       };
 
       const updatedOrder = await order.save();
+
+      // Award points if transitioning to paid
+      if (!wasPaid) {
+        const pointsEarned = Math.floor(order.totalPrice / 100);
+        if (pointsEarned > 0) {
+          const user = await User.findById(order.user);
+          if (user) {
+            user.rewardPoints += pointsEarned;
+            await user.save();
+          }
+        }
+      }
+
       res.json(updatedOrder);
     } else {
       res.status(404).json({ message: 'Order not found' });
@@ -142,6 +191,7 @@ export const updateOrderFulfillment = async (req, res) => {
     const order = await Order.findById(req.params.id);
 
     if (order) {
+      const wasPaid = order.isPaid;
       order.fulfillmentStatus = status;
       if (status === 'Delivered') {
         order.isPaid = true; // Auto paid if COD and delivered, or just mark delivered
@@ -149,6 +199,18 @@ export const updateOrderFulfillment = async (req, res) => {
       }
 
       const updatedOrder = await order.save();
+
+      if (status === 'Delivered' && !wasPaid) {
+        const pointsEarned = Math.floor(order.totalPrice / 100);
+        if (pointsEarned > 0) {
+          const user = await User.findById(order.user);
+          if (user) {
+            user.rewardPoints += pointsEarned;
+            await user.save();
+          }
+        }
+      }
+
       res.json(updatedOrder);
     } else {
       res.status(404).json({ message: 'Order not found' });

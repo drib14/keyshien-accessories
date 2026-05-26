@@ -36,9 +36,17 @@ const UserSchema = new mongoose.Schema(
     verificationToken: String,
     resetPasswordToken: String,
     resetPasswordExpires: Date,
+    walletBalance: {
+      type: Number,
+      default: 0.00,
+    },
+    rewardPoints: {
+      type: Number,
+      default: 0,
+    },
     avatar: {
       type: String,
-      default: 'https://res.cloudinary.com/dwquuisuj/image/upload/v1700000000/default_avatar.png',
+      default: '',
     },
   },
   { timestamps: true }

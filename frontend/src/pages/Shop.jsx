@@ -4,28 +4,34 @@ import { Search, SlidersHorizontal, Loader2 } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import { API_URL } from '../context/AuthContext';
 
-const categories = [
-  'All',
-  'Rings',
-  'Necklaces',
-  'Earrings',
-  'Bracelets',
-  'Hair Clips',
-  'Bags',
-  'Keychains',
-];
-
 const Shop = () => {
   const queryParams = new URLSearchParams(useLocation().search);
   const initialCategory = queryParams.get('category') || 'All';
 
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState(['All']);
   const [loading, setLoading] = useState(true);
   const [keyword, setKeyword] = useState('');
   const [category, setCategory] = useState(initialCategory);
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [sort, setSort] = useState('newest');
+
+  // Load dynamic categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch(`${API_URL}/categories`);
+        if (res.ok) {
+          const data = await res.json();
+          setCategories(['All', ...data.map((c) => c.name)]);
+        }
+      } catch (err) {
+        console.error('Failed to load categories for Shop:', err);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   // Trigger search whenever filters change
   useEffect(() => {

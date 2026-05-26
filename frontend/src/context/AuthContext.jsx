@@ -159,6 +159,26 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
+  // Refresh profile details (wallet, rewards, etc.)
+  const refreshProfile = async () => {
+    if (token) {
+      try {
+        const response = await fetch(`${API_URL}/auth/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setUser({ ...data, token });
+          return data;
+        }
+      } catch (error) {
+        console.error('Failed to refresh user profile:', error);
+      }
+    }
+  };
+
   const value = {
     user,
     token,
@@ -170,6 +190,7 @@ export const AuthProvider = ({ children }) => {
     sendResetCode,
     verifyResetCode,
     resetPassword,
+    refreshProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

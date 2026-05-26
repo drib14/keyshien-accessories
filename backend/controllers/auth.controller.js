@@ -86,6 +86,8 @@ export const loginUser = async (req, res) => {
       role: user.role,
       avatar: user.avatar,
       isVerified: user.isVerified,
+      walletBalance: user.walletBalance,
+      rewardPoints: user.rewardPoints,
       token: generateToken(user._id),
     });
   } catch (error) {
@@ -227,6 +229,8 @@ export const getUserProfile = async (req, res) => {
         role: user.role,
         avatar: user.avatar,
         isVerified: user.isVerified,
+        walletBalance: user.walletBalance,
+        rewardPoints: user.rewardPoints,
       });
     } else {
       res.status(404).json({ message: 'User not found' });
@@ -260,11 +264,45 @@ export const updateUserProfile = async (req, res) => {
         role: updatedUser.role,
         avatar: updatedUser.avatar,
         isVerified: updatedUser.isVerified,
+        walletBalance: updatedUser.walletBalance,
+        rewardPoints: updatedUser.rewardPoints,
         token: generateToken(updatedUser._id),
       });
     } else {
       res.status(404).json({ message: 'User not found' });
     }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Redeem reward points for wallet credits
+// @route   POST /api/auth/redeem-rewards
+// @access  Private
+export const redeemRewards = async (req, res) => {
+  const { points } = req.body;
+  if (!points || points < 10) {
+    return res.status(400).json({ message: 'Must redeem at least 10 points' });
+  }
+
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (user.rewardPoints < points) {
+      return res.status(400).json({ message: 'Insufficient reward points balance' });
+    }
+
+    const creditedAmount = Math.floor(points / 10); // 10 points = ₱1 Wallet balance
+    user.rewardPoints -= points;
+    user.walletBalance += creditedAmount;
+
+    await user.save();
+
+    res.json({
+      message: `Successfully redeemed ${points} points for ₱${creditedAmount}.00 wallet credits!`,
+      walletBalance: user.walletBalance,
+      rewardPoints: user.rewardPoints,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -21,6 +21,7 @@ import Checkout from './pages/Checkout';
 import CheckoutSuccess from './pages/CheckoutSuccess';
 import OrderHistory from './pages/OrderHistory';
 import UserProfile from './pages/UserProfile';
+import WalletDashboard from './pages/WalletDashboard';
 
 // Auth Pages
 import Login from './pages/Login';
@@ -31,6 +32,7 @@ import ForgotPassword from './pages/ForgotPassword';
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
+import AdminCategories from './pages/admin/AdminCategories';
 import AdminOrders from './pages/admin/AdminOrders';
 
 // Route Guards
@@ -80,10 +82,12 @@ const AppContent = () => {
           <Route path="/orders" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
           <Route path="/orders/:id" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+          <Route path="/wallet" element={<ProtectedRoute><WalletDashboard /></ProtectedRoute>} />
 
           {/* Admin Panels Protected Routes */}
           <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
+          <Route path="/admin/categories" element={<AdminRoute><AdminCategories /></AdminRoute>} />
           <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
 
           {/* Fallback to Home */}

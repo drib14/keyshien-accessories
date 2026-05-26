@@ -8,13 +8,14 @@ import { API_URL } from '../context/AuthContext';
 
 const Checkout = () => {
   const { cartItems, shippingAddress, coordinates, saveShippingAddress, saveCoordinates, getCartSubtotal, clearCart } = useCart();
-  const { token } = useAuth();
+  const { user, token, refreshProfile } = useAuth();
   const navigate = useNavigate();
 
   const [address, setAddress] = useState(shippingAddress.address || '');
   const [city, setCity] = useState(shippingAddress.city || '');
   const [postalCode, setPostalCode] = useState(shippingAddress.postalCode || '');
   
+  const [paymentGateway, setPaymentGateway] = useState('gcash'); // Default to GCash Paymongo
   const [orderLoading, setOrderLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -42,10 +43,17 @@ const Checkout = () => {
   };
 
   const handlePlaceOrder = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!address || !city || !postalCode) {
       setError('Please fill in all shipping details');
       return;
+    }
+
+    if (paymentGateway === 'wallet') {
+      if ((user?.walletBalance || 0) < total) {
+        setError('Insufficient wallet balance. Please top up your wallet or choose another payment method.');
+        return;
+      }
     }
 
     setOrderLoading(true);
@@ -73,7 +81,7 @@ const Checkout = () => {
           orderItems,
           shippingAddress: shippingAddressData,
           coordinates,
-          paymentMethod: 'Paymongo',
+          paymentMethod: paymentGateway === 'wallet' ? 'Wallet' : 'Paymongo (' + paymentGateway.toUpperCase() + ')',
           totalPrice: total,
         }),
       });
@@ -84,7 +92,17 @@ const Checkout = () => {
         throw new Error(orderData.message || 'Failed to create order');
       }
 
-      // 2. Create Paymongo Checkout Session
+      // If Wallet payment, order is already paid inside backend!
+      if (paymentGateway === 'wallet') {
+        clearCart();
+        // Sync context wallet balance
+        await refreshProfile();
+        // Redirect directly to success screen
+        navigate(`/checkout-success?order_id=${orderData._id}&method=wallet`);
+        return;
+      }
+
+      // 2. Create Paymongo Checkout Session for specific gateway
       const paymentResponse = await fetch(`${API_URL}/payments/create-session`, {
         method: 'POST',
         headers: {
@@ -93,6 +111,7 @@ const Checkout = () => {
         },
         body: JSON.stringify({
           orderId: orderData._id,
+          paymentMethod: paymentGateway, // card, gcash, paymaya, grab_pay
         }),
       });
 
@@ -180,18 +199,51 @@ const Checkout = () => {
           overflow: hidden;
           text-overflow: ellipsis;
         }
-        .payment-method-badge {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 14px;
-          border: 2px solid var(--color-primary);
+        .payment-methods-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 16px;
+          margin-top: 18px;
+        }
+        .payment-method-card {
+          padding: 16px;
+          border: 2px solid var(--border-glass);
           border-radius: var(--radius-md);
+          background: var(--bg-glass);
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          transition: all var(--transition-fast);
+        }
+        .payment-method-card:hover {
+          border-color: var(--color-primary);
+          transform: translateY(-2px);
+        }
+        .payment-method-card.active {
+          border-color: var(--color-accent);
           background: rgba(255, 107, 139, 0.05);
+          box-shadow: var(--shadow-sm);
+        }
+        .method-title {
+          font-family: var(--font-headers);
           font-weight: 700;
           font-size: 14px;
-          color: var(--color-accent);
-          margin-top: 10px;
+          color: var(--color-dark);
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .method-desc {
+          font-size: 11px;
+          color: var(--color-muted);
+          line-height: 1.4;
+        }
+        .wallet-insufficient-warning {
+          color: var(--color-danger);
+          font-size: 11px;
+          font-weight: 600;
+          margin-top: 4px;
         }
       `}</style>
 
@@ -228,7 +280,7 @@ const Checkout = () => {
               </div>
 
               <div className="form-row">
-                <div className="form-group">
+                <div className="form-group" style={{ width: '50%' }}>
                   <label className="form-label">City / Province</label>
                   <input
                     type="text"
@@ -239,7 +291,7 @@ const Checkout = () => {
                     required
                   />
                 </div>
-                <div className="form-group">
+                <div className="form-group" style={{ width: '50%' }}>
                   <label className="form-label">Postal Code</label>
                   <input
                     type="text"
@@ -261,16 +313,71 @@ const Checkout = () => {
             </div>
 
             <div className="form-card glass-panel">
-              <h3 style={{ fontFamily: 'var(--font-headers)', fontSize: '18px', color: 'var(--color-dark)', marginBottom: '16px', display: 'flex', alignContent: 'center', gap: '8px' }}>
-                <CreditCard size={18} style={{ color: 'var(--color-primary)' }} /> 2. Payment Gateway Method
+              <h3 style={{ fontFamily: 'var(--font-headers)', fontSize: '18px', color: 'var(--color-dark)', marginBottom: '12px', display: 'flex', alignContent: 'center', gap: '8px' }}>
+                <CreditCard size={18} style={{ color: 'var(--color-primary)' }} /> 2. Choose Payment Gateway
               </h3>
-              <p style={{ fontSize: '13px', color: 'var(--color-muted)', lineHeight: '1.5' }}>
-                All transaction processes are securely managed. You will be redirected to Paymongo secure checkout to complete your transaction via Credit/Debit card or GCash/Maya e-wallets.
+              <p style={{ fontSize: '13px', color: 'var(--color-muted)', lineHeight: '1.5', marginBottom: '20px' }}>
+                All transaction processes are securely managed. Choose your dedicated gateway form below:
               </p>
 
-              <div className="payment-method-badge">
-                <CreditCard size={18} />
-                <span>Paymongo Gateway (Cards, GCash, PayMaya, GrabPay)</span>
+              <div className="payment-methods-grid">
+                {/* GCash */}
+                <div 
+                  className={`payment-method-card ${paymentGateway === 'gcash' ? 'active' : ''}`}
+                  onClick={() => setPaymentGateway('gcash')}
+                >
+                  <span className="method-title">📱 GCash E-Wallet</span>
+                  <span className="method-desc">Pay instantly using your GCash sandbox account.</span>
+                </div>
+
+                {/* PayMaya */}
+                <div 
+                  className={`payment-method-card ${paymentGateway === 'paymaya' ? 'active' : ''}`}
+                  onClick={() => setPaymentGateway('paymaya')}
+                >
+                  <span className="method-title">💳 Maya E-Wallet</span>
+                  <span className="method-desc">Pay instantly using Maya sandbox balance.</span>
+                </div>
+
+                {/* Card */}
+                <div 
+                  className={`payment-method-card ${paymentGateway === 'card' ? 'active' : ''}`}
+                  onClick={() => setPaymentGateway('card')}
+                >
+                  <span className="method-title">💳 Credit / Debit Card</span>
+                  <span className="method-desc">Supports Visa and Mastercard credit cards.</span>
+                </div>
+
+                {/* GrabPay */}
+                <div 
+                  className={`payment-method-card ${paymentGateway === 'grab_pay' ? 'active' : ''}`}
+                  onClick={() => setPaymentGateway('grab_pay')}
+                >
+                  <span className="method-title">📱 GrabPay</span>
+                  <span className="method-desc">Charge directly to your Grab e-wallet account.</span>
+                </div>
+
+                {/* Wallet Balance */}
+                <div 
+                  className={`payment-method-card ${paymentGateway === 'wallet' ? 'active' : ''}`}
+                  onClick={() => setPaymentGateway('wallet')}
+                  style={{ gridColumn: 'span 2' }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                    <span className="method-title">💖 Keyshien Wallet Balance</span>
+                    <strong style={{ color: 'var(--color-accent)' }}>
+                      Available: ₱{Number(user?.walletBalance || 0).toFixed(2)}
+                    </strong>
+                  </div>
+                  <span className="method-desc">
+                    Debits your internal store account balance instantly. No external redirects.
+                  </span>
+                  {(user?.walletBalance || 0) < total && (
+                    <span className="wallet-insufficient-warning">
+                      ⚠️ Insufficient wallet balance for this purchase. Choose another payment method or top up.
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </form>
@@ -298,23 +405,23 @@ const Checkout = () => {
 
             <hr style={{ border: '0', borderTop: '1px solid #ffccd5', margin: '15px 0' }} />
 
-            <div className="summary-row" style={{ fontSize: '13px', marginBottom: '10px' }}>
+            <div className="summary-row" style={{ fontSize: '13px', marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
               <span>Subtotal</span>
               <span style={{ fontWeight: 600, color: 'var(--color-dark)' }}>₱{subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
             </div>
-            <div className="summary-row" style={{ fontSize: '13px', marginBottom: '10px' }}>
+            <div className="summary-row" style={{ fontSize: '13px', marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
               <span>Shipping Fee</span>
               <span style={{ fontWeight: 600, color: 'var(--color-dark)' }}>{shipping === 0 ? 'FREE' : `₱${shipping.toFixed(2)}`}</span>
             </div>
 
-            <div className="summary-total-row" style={{ marginTop: '12px', paddingTop: '12px' }}>
+            <div className="summary-total-row" style={{ marginTop: '12px', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '2px solid rgba(255, 182, 193, 0.4)' }}>
               <span style={{ fontSize: '16px' }}>Checkout Total</span>
-              <span style={{ color: 'var(--color-accent)', fontSize: '24px' }}>₱{total.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              <span style={{ color: 'var(--color-accent)', fontSize: '24px', fontWeight: 800 }}>₱{total.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
             </div>
 
             <button
               onClick={handlePlaceOrder}
-              disabled={orderLoading}
+              disabled={orderLoading || (paymentGateway === 'wallet' && (user?.walletBalance || 0) < total)}
               className="btn btn-primary"
               style={{ width: '100%', padding: '14px 0', marginTop: '24px', fontSize: '15px' }}
             >
@@ -322,9 +429,13 @@ const Checkout = () => {
                 <>
                   <Loader2 size={16} className="spinning-icon" /> Creating Checkout...
                 </>
+              ) : paymentGateway === 'wallet' ? (
+                <>
+                  Confirm Instant Wallet Payment <ArrowRight size={16} />
+                </>
               ) : (
                 <>
-                  Proceed to Paymongo Gateway <ArrowRight size={16} />
+                  Proceed to Secure Checkout <ArrowRight size={16} />
                 </>
               )}
             </button>

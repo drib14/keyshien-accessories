@@ -8,6 +8,7 @@ import {
   resetPassword,
   getUserProfile,
   updateUserProfile,
+  redeemRewards,
 } from '../controllers/auth.controller.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -24,5 +25,7 @@ router
   .route('/profile')
   .get(protect, getUserProfile)
   .put(protect, updateUserProfile);
+
+router.post('/redeem-rewards', protect, redeemRewards);
 
 export default router;

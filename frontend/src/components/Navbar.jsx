@@ -1,18 +1,39 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, User, LogOut, LayoutDashboard, Store, Heart } from 'lucide-react';
+import { ShoppingBag, User, LogOut, LayoutDashboard, Store, Wallet } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+
+const getInitials = (name) => {
+  if (!name) return 'U';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const { getCartCount } = useCart();
   const navigate = useNavigate();
 
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
   const handleLogout = () => {
     logout();
+    setDropdownOpen(false);
     navigate('/login');
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <nav className="navbar-container glass-panel">
@@ -36,11 +57,19 @@ const Navbar = () => {
           color: var(--color-dark);
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 10px;
         }
-        .logo-heart {
-          color: var(--color-accent);
-          animation: beatHeart 2.5s infinite;
+        .navbar-brand-logo {
+          width: 38px;
+          height: 38px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 2px solid var(--color-primary);
+          box-shadow: var(--shadow-sm);
+          transition: transform var(--transition-fast);
+        }
+        .navbar-brand-logo:hover {
+          transform: scale(1.05);
         }
         .navbar-links {
           display: flex;
@@ -73,7 +102,7 @@ const Navbar = () => {
         .navbar-actions {
           display: flex;
           align-items: center;
-          gap: 20px;
+          gap: 16px;
         }
         .action-icon-btn {
           position: relative;
@@ -127,7 +156,7 @@ const Navbar = () => {
           display: none;
           z-index: 101;
         }
-        .user-nav-dropdown:hover .user-nav-menu {
+        .user-nav-menu.show {
           display: block;
         }
         .dropdown-menu-item {
@@ -145,11 +174,37 @@ const Navbar = () => {
           background: var(--bg-primary);
           color: var(--color-accent);
         }
-        @keyframes beatHeart {
-          0%, 100% { transform: scale(1); }
-          25% { transform: scale(1.1); }
-          40% { transform: scale(1.05); }
-          55% { transform: scale(1.15); }
+        .initials-avatar {
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+          color: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          font-size: 14px;
+          font-family: var(--font-headers);
+        }
+        .nav-wallet-pill {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 14px;
+          border-radius: var(--radius-round);
+          background: rgba(255, 107, 139, 0.1);
+          border: 1px solid rgba(255, 107, 139, 0.25);
+          color: var(--color-accent);
+          font-family: var(--font-headers);
+          font-weight: 700;
+          font-size: 13px;
+          transition: all var(--transition-fast);
+          cursor: pointer;
+        }
+        .nav-wallet-pill:hover {
+          background: rgba(255, 107, 139, 0.2);
+          transform: translateY(-2px);
         }
         @media (max-width: 768px) {
           .navbar-links {
@@ -162,7 +217,7 @@ const Navbar = () => {
       `}</style>
 
       <Link to="/" className="navbar-logo-link">
-        <Heart size={22} className="logo-heart" fill="var(--color-accent)" />
+        <img src="/logo.jpg" alt="Keyshien Logo" className="navbar-brand-logo" />
         <span>Keyshien</span>
       </Link>
 
@@ -173,14 +228,26 @@ const Navbar = () => {
       </ul>
 
       <div className="navbar-actions">
+        {user && (
+          <Link to="/wallet" className="nav-wallet-pill" title="My Wallet Balance">
+            <Wallet size={14} />
+            <span>₱{Number(user.walletBalance || 0).toFixed(2)}</span>
+          </Link>
+        )}
+
         <Link to="/cart" className="action-icon-btn" title="View Cart">
           <ShoppingBag size={18} />
           {getCartCount() > 0 && <span className="cart-badge-count">{getCartCount()}</span>}
         </Link>
 
         {user ? (
-          <div className="user-nav-dropdown">
-            <button className="action-icon-btn" title="Account Menu">
+          <div className="user-nav-dropdown" ref={dropdownRef}>
+            <button 
+              className="action-icon-btn" 
+              onClick={() => setDropdownOpen(!dropdownOpen)} 
+              title="Account Menu"
+              style={{ overflow: 'hidden' }}
+            >
               {user.avatar ? (
                 <img 
                   src={user.avatar} 
@@ -188,21 +255,25 @@ const Navbar = () => {
                   style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
                 />
               ) : (
-                <User size={18} />
+                <div className="initials-avatar">{getInitials(user.name)}</div>
               )}
             </button>
-            <div className="user-nav-menu glass-panel">
+            <div className={`user-nav-menu glass-panel ${dropdownOpen ? 'show' : ''}`}>
               {user.role === 'admin' && (
-                <Link to="/admin/dashboard" className="dropdown-menu-item">
+                <Link to="/admin/dashboard" className="dropdown-menu-item" onClick={() => setDropdownOpen(false)}>
                   <LayoutDashboard size={14} />
                   <span>Admin Dashboard</span>
                 </Link>
               )}
-              <Link to="/profile" className="dropdown-menu-item">
+              <Link to="/profile" className="dropdown-menu-item" onClick={() => setDropdownOpen(false)}>
                 <User size={14} />
                 <span>My Profile</span>
               </Link>
-              <Link to="/shop" className="dropdown-menu-item">
+              <Link to="/wallet" className="dropdown-menu-item" onClick={() => setDropdownOpen(false)}>
+                <Wallet size={14} />
+                <span>My Wallet</span>
+              </Link>
+              <Link to="/shop" className="dropdown-menu-item" onClick={() => setDropdownOpen(false)}>
                 <Store size={14} />
                 <span>Browse Store</span>
               </Link>
