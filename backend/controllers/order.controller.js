@@ -2,6 +2,7 @@ import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import User from '../models/User.js';
 import Promocode from '../models/Promocode.js';
+import { bookLalamoveDelivery } from '../utils/lalamove.js';
 
 // @desc    Create new order & decrement stock
 // @route   POST /api/orders
@@ -15,6 +16,8 @@ export const addOrderItems = async (req, res) => {
     totalPrice,
     promocode,
     discountAmount,
+    shippingMethod,
+    lalamoveQuotationId,
   } = req.body;
 
   try {
@@ -81,6 +84,8 @@ export const addOrderItems = async (req, res) => {
       totalPrice,
       promocode,
       discountAmount: discountAmount || 0,
+      shippingMethod: shippingMethod || 'Standard',
+      lalamoveQuotationId,
       isPaid,
       paidAt,
       fulfillmentStatus,
@@ -98,6 +103,21 @@ export const addOrderItems = async (req, res) => {
         );
       } catch (err) {
         console.error('Failed to increment promocode usage count:', err);
+      }
+    }
+
+    // Automated Lalamove Delivery Booking for Instant Wallet Payment
+    if (createdOrder.paymentMethod === 'Wallet' && createdOrder.shippingMethod === 'Lalamove') {
+      try {
+        const user = await User.findById(req.user._id);
+        const lalamoveBooking = await bookLalamoveDelivery(createdOrder, user);
+        if (lalamoveBooking) {
+          createdOrder.lalamoveDeliveryId = lalamoveBooking.id;
+          createdOrder.lalamoveTrackingStatus = lalamoveBooking.attributes.status;
+          await createdOrder.save();
+        }
+      } catch (err) {
+        console.error('Failed to auto-book Lalamove delivery on checkout:', err);
       }
     }
 

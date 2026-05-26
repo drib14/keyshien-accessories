@@ -12,6 +12,7 @@ import uploadRoutes from './routes/upload.routes.js';
 import categoryRoutes from './routes/category.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
 import promocodeRoutes from './routes/promocode.routes.js';
+import lalamoveRoutes from './routes/lalamove.routes.js';
 
 // Load Env
 dotenv.config();
@@ -39,6 +40,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/promocodes', promocodeRoutes);
+app.use('/api/lalamove', lalamoveRoutes);
 
 // 404 Route handler
 app.use((req, res, next) => {

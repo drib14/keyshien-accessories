@@ -1,6 +1,7 @@
 import axios from 'axios';
 import Order from '../models/Order.js';
 import User from '../models/User.js';
+import { bookLalamoveDelivery } from '../utils/lalamove.js';
 
 // Base64 encode the Paymongo Secret Key (robustly detecting the key starting with sk_ in case they are swapped in .env)
 const getPaymongoAuthHeader = () => {
@@ -133,6 +134,21 @@ export const verifyCheckoutSession = async (req, res) => {
         paymongoCheckoutId: activeSessionId,
       };
       await order.save();
+
+      // Automated Lalamove Delivery Booking for Successful Paymongo Payment
+      if (!wasPaid && order.shippingMethod === 'Lalamove' && !order.lalamoveDeliveryId) {
+        try {
+          const user = await User.findById(order.user);
+          const lalamoveBooking = await bookLalamoveDelivery(order, user);
+          if (lalamoveBooking) {
+            order.lalamoveDeliveryId = lalamoveBooking.id;
+            order.lalamoveTrackingStatus = lalamoveBooking.attributes.status;
+            await order.save();
+          }
+        } catch (err) {
+          console.error('Failed to auto-book Lalamove delivery on Paymongo success:', err);
+        }
+      }
 
       // Award points if not already paid
       if (!wasPaid) {
