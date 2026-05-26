@@ -154,7 +154,7 @@ const CheckoutSuccess = () => {
             </div>
             <h2 className="success-title">Payment Confirmed!</h2>
             <p className="success-desc">
-              Thank you for shopping with Keyshien Accessories! Your payment was verified successfully. We are now preparing your handcrafted jewels for shipment.
+              Thank you for shopping with Keyshien's Accessories! Your payment was verified successfully. We are now preparing your handcrafted jewels for shipment.
             </p>
 
             {order && (

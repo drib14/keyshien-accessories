@@ -66,9 +66,9 @@ const Footer = () => {
         <Heart size={16} fill="var(--color-primary)" style={{ color: 'var(--color-primary)' }} />
         <span>Keyshien Accessories</span>
       </div>
-      
+
       <p className="footer-tagline">
-        Elevate your everyday style with our exquisite handpicked rings, premium necklaces, earrings, and hair accessories curated in soft rose harmony.
+        Elevate your everyday style with our premium handcrafted accessories curated in soft rose harmony.
       </p>
 
       <ul className="footer-links">
