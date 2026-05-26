@@ -64,7 +64,7 @@ const Footer = () => {
 
       <div className="footer-logo">
         <Heart size={16} fill="var(--color-primary)" style={{ color: 'var(--color-primary)' }} />
-        <span>Keyshien Accessories</span>
+        <span>Keyshien's Accessories</span>
       </div>
 
       <p className="footer-tagline">
@@ -78,7 +78,7 @@ const Footer = () => {
       </ul>
 
       <div className="footer-copy">
-        <span>&copy; {new Date().getFullYear()} Keyshien Accessories. Crafted with</span>
+        <span>&copy; {new Date().getFullYear()} Keyshien's Accessories. Crafted with</span>
         <Heart size={10} fill="var(--color-accent)" style={{ color: 'var(--color-accent)' }} />
         <span>in the Philippines.</span>
       </div>

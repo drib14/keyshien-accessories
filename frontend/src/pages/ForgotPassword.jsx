@@ -10,7 +10,7 @@ const ForgotPassword = () => {
   // Step state: 1 = Email submission, 2 = Code verification, 3 = Reset password, 4 = Success!
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');
-  
+
   // 6-digit code states
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const inputRefs = useRef([]);
@@ -357,7 +357,7 @@ const ForgotPassword = () => {
             </div>
             <h2 className="forgot-title">Password Reset!</h2>
             <p className="forgot-desc" style={{ marginBottom: '30px' }}>
-              Your password has been updated successfully! You can now log into your Keyshien Accessories account using your new credentials.
+              Your password has been updated successfully! You can now log into your Keyshien's Accessories account using your new credentials.
             </p>
             <Link to="/login" className="btn btn-primary" style={{ padding: '12px 30px' }}>
               Sign In Now
