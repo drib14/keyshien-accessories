@@ -259,3 +259,67 @@ button {
   font-size: 16px;
   font-weight: 400;
 }
+
+/* Global Admin Layout & Sync-Sidebar Styles */
+.admin-layout {
+  display: flex;
+  padding: 40px;
+  gap: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.admin-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  padding: 20px;
+  height: fit-content;
+}
+
+.admin-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  font-family: var(--font-headers);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--color-muted);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+  margin-bottom: 8px;
+}
+
+.admin-menu-item:hover {
+  color: var(--color-primary-hover);
+  background: rgba(255, 107, 139, 0.05);
+}
+
+.admin-menu-item.active {
+  color: var(--color-accent);
+  background: rgba(255, 107, 139, 0.1);
+}
+
+.admin-main-panel {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+@media (max-width: 992px) {
+  .admin-layout {
+    flex-direction: column;
+    padding: 20px;
+  }
+  .admin-sidebar {
+    width: 100%;
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    margin-bottom: 20px;
+  }
+  .admin-menu-item {
+    margin-bottom: 0;
+    white-space: nowrap;
+  }
+}
+
