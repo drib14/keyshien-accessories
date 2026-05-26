@@ -1,0 +1,80 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  /* Color Palette - Premium Soft Pink & Rose Gold */
+  --primary-hue: 345;
+  
+  --bg-primary: #fff8f9;
+  --bg-secondary: #ffffff;
+  --bg-glass: rgba(255, 255, 255, 0.7);
+  --border-glass: rgba(255, 182, 193, 0.4);
+  
+  --color-primary: hsl(var(--primary-hue), 100%, 72%);     /* Gorgeous Rose Gold Pink */
+  --color-primary-hover: hsl(var(--primary-hue), 95%, 66%);
+  --color-secondary: hsl(var(--primary-hue), 100%, 85%);   /* Soft Cotton Candy */
+  --color-dark: #2b0e15;                                   /* Elegant Dark Cocoa/Magenta */
+  --color-accent: hsl(340, 100%, 55%);                     /* Vibrantly glowing pink */
+  --color-muted: #8c767b;
+  --color-success: #4caf50;
+  --color-warning: #ff9800;
+  --color-danger: #f44336;
+  
+  /* Fonts */
+  --font-headers: 'Outfit', 'Inter', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  
+  /* Shadows & Glassmorphism */
+  --shadow-sm: 0 2px 8px rgba(255, 107, 139, 0.08);
+  --shadow-md: 0 8px 24px rgba(255, 107, 139, 0.12);
+  --shadow-lg: 0 16px 40px rgba(255, 107, 139, 0.18);
+  --shadow-glass: 0 8px 32px 0 rgba(255, 107, 139, 0.15);
+  
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-round: 50px;
+  
+  --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-medium: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  --blur-glass: 16px;
+}
+
+/* Optional Dark Mode variables */
+[data-theme="dark"] {
+  --bg-primary: #120509;
+  --bg-secondary: #1f0b12;
+  --bg-glass: rgba(31, 11, 18, 0.7);
+  --border-glass: rgba(255, 107, 139, 0.2);
+  
+  --color-primary: hsl(var(--primary-hue), 100%, 75%);
+  --color-secondary: #3d1b24;
+  --color-dark: #fff0f3;
+  --color-muted: #bda3ab;
+  
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--color-dark);
+  font-family: var(--font-body);
+  transition: background-color var(--transition-medium), color var(--transition-medium);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-headers);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
