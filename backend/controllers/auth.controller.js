@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
-import { sendVerificationEmail, sendPasswordResetEmail } from '../config/nodemailer.js';
+import { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail } from '../config/nodemailer.js';
 
 // Helper to generate JWT Token
 const generateToken = (id) => {
@@ -109,6 +109,13 @@ export const verifyEmail = async (req, res) => {
     user.isVerified = true;
     user.verificationToken = undefined;
     await user.save();
+
+    // Send Welcome Email
+    try {
+      await sendWelcomeEmail(user.email, user.name);
+    } catch (err) {
+      console.error('Failed to send welcome email:', err);
+    }
 
     res.json({
       message: 'Email verified successfully! You can now log in.',
