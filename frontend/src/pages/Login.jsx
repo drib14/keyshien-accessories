@@ -4,7 +4,7 @@ import { Mail, Lock, LogIn, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
-  const { login, loginWithGoogle, user } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
@@ -20,58 +20,6 @@ const Login = () => {
       navigate(redirect);
     }
   }, [user, navigate, redirect]);
-
-  // Load and initialize Google Identity Services
-  useEffect(() => {
-    if (user) return;
-
-    const initializeGoogle = () => {
-      if (window.google) {
-        window.google.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-          callback: handleGoogleCallback,
-        });
-
-        window.google.accounts.id.renderButton(
-          document.getElementById('google-signin-button'),
-          { 
-            theme: 'outline', 
-            size: 'large', 
-            width: '100%',
-            shape: 'pill',
-            text: 'signin_with' 
-          }
-        );
-      }
-    };
-
-    // If script already exists, initialize, else load it
-    const scriptExists = document.getElementById('google-gsi-client');
-    if (scriptExists) {
-      initializeGoogle();
-    } else {
-      const script = document.createElement('script');
-      script.id = 'google-gsi-client';
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.async = true;
-      script.defer = true;
-      script.onload = initializeGoogle;
-      document.body.appendChild(script);
-    }
-  }, [user]);
-
-  const handleGoogleCallback = async (response) => {
-    setLoading(true);
-    setError('');
-    try {
-      await loginWithGoogle(response.credential);
-      navigate(redirect);
-    } catch (err) {
-      console.error(err);
-      setError(err.message || 'Google Sign-In failed');
-      setLoading(false);
-    }
-  };
 
   const handleLocalSubmit = async (e) => {
     e.preventDefault();
@@ -121,27 +69,6 @@ const Login = () => {
         }
         .auth-control {
           padding-left: 42px !important;
-        }
-        .oauth-divider {
-          display: flex;
-          align-items: center;
-          text-align: center;
-          color: var(--color-muted);
-          font-size: 12px;
-          font-weight: 600;
-          text-transform: uppercase;
-          margin: 24px 0;
-        }
-        .oauth-divider::before, .oauth-divider::after {
-          content: '';
-          flex: 1;
-          border-bottom: 1px solid var(--border-glass);
-        }
-        .oauth-divider:not(:empty)::before {
-          margin-right: .55em;
-        }
-        .oauth-divider:not(:empty)::after {
-          margin-left: .55em;
         }
       `}</style>
 
@@ -200,11 +127,6 @@ const Login = () => {
             {loading ? <Loader2 size={16} className="spinning-icon" /> : <>Sign In <LogIn size={16} /></>}
           </button>
         </form>
-
-        <div className="oauth-divider">or connect with</div>
-
-        {/* Google OAuth Native Button */}
-        <div id="google-signin-button" style={{ display: 'flex', justifyContent: 'center' }}></div>
 
         <p style={{ textAlign: 'center', marginTop: '30px', fontSize: '13px', color: 'var(--color-muted)' }}>
           Don't have an account?{' '}

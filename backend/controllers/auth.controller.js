@@ -1,6 +1,5 @@
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
-import axios from 'axios';
 import User from '../models/User.js';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../config/nodemailer.js';
 
@@ -41,7 +40,6 @@ export const registerUser = async (req, res) => {
         await sendVerificationEmail(user.email, user.name, verificationToken);
       } catch (err) {
         console.error('Error sending verification email:', err);
-        // Do not fail register if mail fails, but note it
       }
 
       res.status(201).json({
@@ -73,12 +71,8 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    if (!user.googleId && !(await user.matchPassword(password))) {
+    if (!(await user.matchPassword(password))) {
       return res.status(401).json({ message: 'Invalid email or password' });
-    }
-
-    if (user.googleId && !password) {
-      return res.status(400).json({ message: 'This account is linked with Google Sign-In. Please log in with Google.' });
     }
 
     if (!user.isVerified) {
@@ -125,63 +119,7 @@ export const verifyEmail = async (req, res) => {
   }
 };
 
-// @desc    Google OAuth Sign-In
-// @route   POST /api/auth/google
-// @access  Public
-export const googleSignIn = async (req, res) => {
-  const { idToken } = req.body;
-
-  try {
-    // Verify the Google ID Token via Google API tokeninfo endpoint
-    const response = await axios.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
-    const payload = response.data;
-
-    if (!payload.email) {
-      return res.status(400).json({ message: 'Google authentication failed: Email not provided' });
-    }
-
-    const { sub: googleId, email, name, picture: avatar } = payload;
-
-    // Check if user already exists
-    let user = await User.findOne({ email });
-
-    if (user) {
-      // If user exists but googleId is not linked, link it
-      if (!user.googleId) {
-        user.googleId = googleId;
-        user.isVerified = true; // Auto-verify Google users
-        if (!user.avatar || user.avatar.includes('default_avatar')) {
-          user.avatar = avatar || user.avatar;
-        }
-        await user.save();
-      }
-    } else {
-      // Create user
-      user = await User.create({
-        name,
-        email,
-        googleId,
-        isVerified: true, // Google accounts are pre-verified
-        avatar: avatar || 'https://res.cloudinary.com/dwquuisuj/image/upload/v1700000000/default_avatar.png',
-      });
-    }
-
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      avatar: user.avatar,
-      isVerified: user.isVerified,
-      token: generateToken(user._id),
-    });
-  } catch (error) {
-    console.error('Google OAuth Error:', error.message);
-    res.status(400).json({ message: 'Google Sign-In failed. Please try again.' });
-  }
-};
-
-// @desc    Forgot Password Request
+// @desc    Forgot Password Request (Sends 6-digit code)
 // @route   POST /api/auth/forgot-password
 // @access  Public
 export const forgotPassword = async (req, res) => {
@@ -194,47 +132,66 @@ export const forgotPassword = async (req, res) => {
       return res.status(404).json({ message: 'No user registered with this email address' });
     }
 
-    if (user.googleId) {
-      return res.status(400).json({ message: 'This email is linked with Google Sign-In. Reset password via Google instead.' });
-    }
-
-    // Generate and hash password reset token
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    // Generate a random 6-digit numeric verification code
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    user.resetPasswordToken = resetCode;
+    user.resetPasswordExpires = Date.now() + 600000; // 10 minutes expiry
 
     await user.save();
 
     try {
-      await sendPasswordResetEmail(user.email, user.name, resetToken);
-      res.json({ message: 'Password reset link sent to your email.' });
+      await sendPasswordResetEmail(user.email, user.name, resetCode);
+      res.json({ message: '6-digit verification code sent to your email.' });
     } catch (err) {
       console.error(err);
       user.resetPasswordToken = undefined;
       user.resetPasswordExpires = undefined;
       await user.save();
-      res.status(500).json({ message: 'Error sending reset email. Please try again later.' });
+      res.status(500).json({ message: 'Error sending reset email code. Please try again later.' });
     }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Reset Password
-// @route   POST /api/auth/reset-password/:token
+// @desc    Verify 6-digit reset code
+// @route   POST /api/auth/verify-reset-code
 // @access  Public
-export const resetPassword = async (req, res) => {
-  const { password } = req.body;
-  const resetPasswordToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+export const verifyResetCode = async (req, res) => {
+  const { email, code } = req.body;
 
   try {
     const user = await User.findOne({
-      resetPasswordToken,
+      email: email.toLowerCase(),
+      resetPasswordToken: code,
       resetPasswordExpires: { $gt: Date.now() },
     });
 
     if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired password reset link' });
+      return res.status(400).json({ message: 'Invalid or expired 6-digit verification code' });
+    }
+
+    res.json({ message: 'Code verified successfully! You may reset your password.', success: true });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Reset Password with 6-digit code
+// @route   POST /api/auth/reset-password
+// @access  Public
+export const resetPassword = async (req, res) => {
+  const { email, code, password } = req.body;
+
+  try {
+    const user = await User.findOne({
+      email: email.toLowerCase(),
+      resetPasswordToken: code,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired 6-digit verification code' });
     }
 
     user.password = password;

@@ -3,8 +3,8 @@ import {
   registerUser,
   loginUser,
   verifyEmail,
-  googleSignIn,
   forgotPassword,
+  verifyResetCode,
   resetPassword,
   getUserProfile,
   updateUserProfile,
@@ -16,9 +16,9 @@ const router = express.Router();
 router.post('/register', registerUser);
 router.post('/login', loginUser);
 router.get('/verify/:token', verifyEmail);
-router.post('/google', googleSignIn);
 router.post('/forgot-password', forgotPassword);
-router.post('/reset-password/:token', resetPassword);
+router.post('/verify-reset-code', verifyResetCode);
+router.post('/reset-password', resetPassword);
 
 router
   .route('/profile')

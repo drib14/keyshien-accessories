@@ -21,9 +21,7 @@ const UserSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: function () {
-        return !this.googleId; // Only required if not logging in via Google
-      },
+      required: [true, 'Please provide a password'],
       minlength: [6, 'Password must be at least 6 characters'],
     },
     role: {
@@ -38,7 +36,6 @@ const UserSchema = new mongoose.Schema(
     verificationToken: String,
     resetPasswordToken: String,
     resetPasswordExpires: Date,
-    googleId: String,
     avatar: {
       type: String,
       default: 'https://res.cloudinary.com/dwquuisuj/image/upload/v1700000000/default_avatar.png',

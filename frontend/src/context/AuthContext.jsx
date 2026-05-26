@@ -76,27 +76,6 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  // Google Sign-In
-  const loginWithGoogle = async (idToken) => {
-    const response = await fetch(`${API_URL}/auth/google`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ idToken }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.message || 'Google Sign-In failed');
-    }
-
-    setToken(data.token);
-    setUser(data);
-    localStorage.setItem('token', data.token);
-    return data;
-  };
-
   // Logout
   const logout = () => {
     setToken(null);
@@ -129,15 +108,68 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
+  // Forgot Password (Send 6-digit Code)
+  const sendResetCode = async (email) => {
+    const response = await fetch(`${API_URL}/auth/forgot-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to send reset code');
+    }
+    return data;
+  };
+
+  // Verify 6-digit Code
+  const verifyResetCode = async (email, code) => {
+    const response = await fetch(`${API_URL}/auth/verify-reset-code`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, code }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Verification of code failed');
+    }
+    return data;
+  };
+
+  // Reset Password with Code
+  const resetPassword = async (email, code, password) => {
+    const response = await fetch(`${API_URL}/auth/reset-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, code, password }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Reset password failed');
+    }
+    return data;
+  };
+
   const value = {
     user,
     token,
     loading,
     register,
     login,
-    loginWithGoogle,
     logout,
     updateProfile,
+    sendResetCode,
+    verifyResetCode,
+    resetPassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

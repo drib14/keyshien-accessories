@@ -26,6 +26,7 @@ import UserProfile from './pages/UserProfile';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import VerifyEmail from './pages/VerifyEmail';
+import ForgotPassword from './pages/ForgotPassword';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -71,6 +72,7 @@ const AppContent = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
 
           {/* Customer Protected Routes */}
           <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
