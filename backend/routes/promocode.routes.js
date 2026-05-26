@@ -4,10 +4,14 @@ import {
   createPromocode,
   deletePromocode,
   validatePromocode,
+  getActivePromocodes,
 } from '../controllers/promocode.controller.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+
+// Public active promo list
+router.route('/active').get(getActivePromocodes);
 
 // Admin CRUD routes
 router

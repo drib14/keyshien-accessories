@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Sparkles, ShieldCheck, Truck, RefreshCw } from 'lucide-react';
+import { ArrowRight, Sparkles, ShieldCheck, Truck, RefreshCw, Tag, ChevronLeft, ChevronRight, Copy, Check } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import { API_URL } from '../context/AuthContext';
 
@@ -10,13 +10,19 @@ const Home = () => {
   const [heroImage, setHeroImage] = useState('https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600&q=80');
   const [loading, setLoading] = useState(true);
 
+  // Promo Carousel States
+  const [promos, setPromos] = useState([]);
+  const [currentPromoIndex, setCurrentPromoIndex] = useState(0);
+  const [copiedCode, setCopiedCode] = useState('');
+
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
-        const [productsRes, categoriesRes, settingsRes] = await Promise.all([
+        const [productsRes, categoriesRes, settingsRes, promosRes] = await Promise.all([
           fetch(`${API_URL}/products?sort=newest`),
           fetch(`${API_URL}/categories`),
-          fetch(`${API_URL}/settings/hero_image`)
+          fetch(`${API_URL}/settings/hero_image`),
+          fetch(`${API_URL}/promocodes/active`)
         ]);
 
         if (productsRes.ok) {
@@ -35,6 +41,11 @@ const Home = () => {
             setHeroImage(settingsData.value);
           }
         }
+
+        if (promosRes.ok) {
+          const promosData = await promosRes.json();
+          setPromos(promosData);
+        }
       } catch (error) {
         console.error('Failed to fetch home data:', error);
       } finally {
@@ -43,6 +54,29 @@ const Home = () => {
     };
     fetchHomeData();
   }, []);
+
+  // Automatic slide rotation every 4.5 seconds if multiple exist
+  useEffect(() => {
+    if (promos.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentPromoIndex((prevIndex) => (prevIndex + 1) % promos.length);
+    }, 4500);
+    return () => clearInterval(interval);
+  }, [promos]);
+
+  const handlePrevPromo = () => {
+    setCurrentPromoIndex((prev) => (prev === 0 ? promos.length - 1 : prev - 1));
+  };
+
+  const handleNextPromo = () => {
+    setCurrentPromoIndex((prev) => (prev === promos.length - 1 ? 0 : prev + 1));
+  };
+
+  const handleCopyCode = (codeText) => {
+    navigator.clipboard.writeText(codeText);
+    setCopiedCode(codeText);
+    setTimeout(() => setCopiedCode(''), 2000);
+  };
 
   return (
     <div className="home-container">
@@ -249,6 +283,163 @@ const Home = () => {
             grid-template-columns: repeat(2, 1fr);
           }
         }
+
+        /* Promo Carousel Styling */
+        .promo-carousel-section {
+          padding: 60px 40px;
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+        .promo-carousel-container {
+          position: relative;
+          overflow: hidden;
+          background: linear-gradient(135deg, rgba(255, 182, 193, 0.1) 0%, rgba(255, 107, 139, 0.12) 100%);
+          border: 1px solid var(--border-glass);
+          border-radius: var(--radius-lg);
+          padding: 40px 60px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          min-height: 180px;
+          box-shadow: var(--shadow-glass);
+          transition: all 0.3s ease;
+        }
+        .promo-slide {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          animation: slideInFade 0.4s ease-in-out;
+          gap: 30px;
+        }
+        .promo-info-col {
+          flex-grow: 1;
+          text-align: left;
+        }
+        .promo-badge-tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: var(--color-accent);
+          color: #ffffff;
+          font-weight: 800;
+          font-size: 11px;
+          padding: 4px 10px;
+          border-radius: var(--radius-sm);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-bottom: 12px;
+          font-family: var(--font-headers);
+        }
+        .promo-headline {
+          font-size: 32px;
+          font-weight: 800;
+          color: var(--color-dark);
+          font-family: var(--font-headers);
+          line-height: 1.2;
+          margin-bottom: 8px;
+        }
+        .promo-headline span {
+          color: var(--color-accent);
+        }
+        .promo-subline {
+          font-size: 13px;
+          color: var(--color-muted);
+          font-weight: 500;
+          margin-bottom: 0;
+        }
+        .promo-action-col {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 12px;
+          flex-shrink: 0;
+        }
+        .coupon-cut-out {
+          border: 2px dashed var(--color-primary);
+          background: #ffffff;
+          padding: 12px 24px;
+          border-radius: var(--radius-md);
+          font-family: var(--font-headers);
+          font-size: 20px;
+          font-weight: 800;
+          color: var(--color-dark);
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          box-shadow: var(--shadow-sm);
+        }
+        .promo-copy-btn {
+          font-size: 12px;
+          padding: 8px 18px;
+          font-weight: 700;
+          border-radius: var(--radius-round);
+          transition: all 0.2s;
+        }
+        .promo-nav-btn {
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+          background: var(--bg-glass);
+          border: 1px solid var(--border-glass);
+          color: var(--color-dark);
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          z-index: 10;
+          transition: all 0.2s;
+          outline: none;
+        }
+        .promo-nav-btn:hover {
+          background: var(--color-secondary);
+          color: var(--color-accent);
+          transform: translateY(-50%) scale(1.05);
+        }
+        .promo-dots {
+          display: flex;
+          justify-content: center;
+          gap: 8px;
+          margin-top: 15px;
+        }
+        .promo-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: rgba(255, 107, 139, 0.25);
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .promo-dot.active {
+          background: var(--color-accent);
+          width: 20px;
+          border-radius: 4px;
+        }
+        @keyframes slideInFade {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @media (max-width: 768px) {
+          .promo-carousel-section {
+            padding: 40px 20px;
+          }
+          .promo-carousel-container {
+            padding: 30px 24px;
+          }
+          .promo-slide {
+            flex-direction: column;
+            text-align: center;
+            gap: 20px;
+          }
+          .promo-headline {
+            font-size: 24px;
+          }
+          .promo-info-col {
+            text-align: center;
+          }
+        }
       `}</style>
 
       {/* Hero Section */}
@@ -321,6 +512,88 @@ const Home = () => {
           <p className="feature-desc">7-day hassle-free replacement on item defects.</p>
         </div>
       </section>
+
+      {/* Dynamic Promocodes Carousel */}
+      {promos.length > 0 && (
+        <section className="promo-carousel-section">
+          <div className="promo-carousel-container glass-panel">
+            {/* Left Nav Button */}
+            {promos.length > 1 && (
+              <button 
+                onClick={handlePrevPromo} 
+                className="promo-nav-btn" 
+                style={{ left: '15px' }}
+                aria-label="Previous promo"
+              >
+                <ChevronLeft size={18} />
+              </button>
+            )}
+
+            {/* Current Slide */}
+            <div className="promo-slide">
+              <div className="promo-info-col">
+                <div className="promo-badge-tag">
+                  <Sparkles size={11} fill="rgba(255,255,255,0.2)" /> Active Campaign
+                </div>
+                <h3 className="promo-headline">
+                  Get <span>{promos[currentPromoIndex].discountType === 'percentage' ? `${promos[currentPromoIndex].discountValue}%` : `₱${promos[currentPromoIndex].discountValue}`} OFF</span> Handcrafted Accessories
+                </h3>
+                <p className="promo-subline">
+                  {promos[currentPromoIndex].minOrderAmount > 0 
+                    ? `*Applicable for cart subtotal of ₱${promos[currentPromoIndex].minOrderAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} and above.`
+                    : '*No minimum purchase required! Shop your handcrafted crafts now.'}
+                </p>
+              </div>
+
+              <div className="promo-action-col">
+                <div className="coupon-cut-out">
+                  {promos[currentPromoIndex].code}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleCopyCode(promos[currentPromoIndex].code)}
+                  className={`btn ${copiedCode === promos[currentPromoIndex].code ? 'btn-primary' : 'btn-secondary'} promo-copy-btn`}
+                >
+                  {copiedCode === promos[currentPromoIndex].code ? (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Check size={13} /> Copied!
+                    </span>
+                  ) : (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Copy size={13} /> Copy Code
+                    </span>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Right Nav Button */}
+            {promos.length > 1 && (
+              <button 
+                onClick={handleNextPromo} 
+                className="promo-nav-btn" 
+                style={{ right: '15px' }}
+                aria-label="Next promo"
+              >
+                <ChevronRight size={18} />
+              </button>
+            )}
+          </div>
+
+          {/* Dots Indicator */}
+          {promos.length > 1 && (
+            <div className="promo-dots">
+              {promos.map((_, index) => (
+                <div
+                  key={index}
+                  onClick={() => setCurrentPromoIndex(index)}
+                  className={`promo-dot ${currentPromoIndex === index ? 'active' : ''}`}
+                ></div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Categories Showcase */}
       <section className="categories-section">

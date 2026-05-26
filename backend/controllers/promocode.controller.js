@@ -121,3 +121,23 @@ export const validatePromocode = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Get active promocodes (Public/Customer)
+// @route   GET /api/promocodes/active
+// @access  Public
+export const getActivePromocodes = async (req, res) => {
+  try {
+    const activePromos = await Promocode.find({
+      isActive: true,
+      $or: [
+        { expiryDate: { $exists: false } },
+        { expiryDate: null },
+        { expiryDate: { $gt: new Date() } }
+      ]
+    }).sort({ createdAt: -1 });
+    
+    res.json(activePromos);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
